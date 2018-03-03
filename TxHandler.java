@@ -41,37 +41,25 @@ public class TxHandler {
      */
     public Transaction[] handleTxs(Transaction[] possibleTxs) {
         // IMPLEMENT THIS
-        ArrayList<UTXO> claimedOutputs = new ArrayList<>();
-        ArrayList<UTXO> tmpClaimedOutputs = new ArrayList<>();
-        HashMap<UTXO, Transaction.Output> utxoPoolIncrement = new HashMap<>();
         HashSet<Transaction> handledTransactions = new HashSet<>();
-        //check if every tx is valid and no double spend attempt is detected
-        outerLoop:
+        //check if every tx is valid and update UTXOPool
         for (Transaction tx : possibleTxs) {
-            tmpClaimedOutputs.clear();
             if (isValidTx(tx)) {
+                //remove all consumed UTXO's
                 for (Transaction.Input input : tx.getInputs()) {
                     UTXO tmpUTXO = new UTXO(input.prevTxHash, input.outputIndex);
-                    //check for cross-tx double spend
-                    if (claimedOutputs.contains(tmpUTXO)) continue outerLoop;
-                    tmpClaimedOutputs.add(tmpUTXO);
+                    mUtxoPool.removeUTXO(tmpUTXO);
+
                 }
-                claimedOutputs.addAll(tmpClaimedOutputs);
+                //add all new UTXO's
                 for (int i = 0; i < tx.numOutputs(); i++) {
                     UTXO utxo = new UTXO(tx.getHash(), i);
-                    utxoPoolIncrement.put(utxo, tx.getOutput(i));
+                    mUtxoPool.addUTXO(utxo, tx.getOutput(i));
                 }
                 handledTransactions.add(tx);
             }
         }
-        //remove all consumed UTXO's
-        for (UTXO utxo : claimedOutputs) {
-            mUtxoPool.removeUTXO(utxo);
-        }
-        //add all new UTXO's
-        for (UTXO utxo : utxoPoolIncrement.keySet()) {
-            mUtxoPool.addUTXO(utxo, utxoPoolIncrement.get(utxo));
-        }
+
         Transaction[] resultArray = new Transaction[handledTransactions.size()];
         handledTransactions.toArray(resultArray);
         return resultArray;
