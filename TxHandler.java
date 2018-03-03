@@ -1,6 +1,7 @@
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class TxHandler {
 
@@ -43,7 +44,7 @@ public class TxHandler {
         ArrayList<UTXO> claimedOutputs = new ArrayList<>();
         ArrayList<UTXO> tmpClaimedOutputs = new ArrayList<>();
         HashMap<UTXO, Transaction.Output> utxoPoolIncrement = new HashMap<>();
-        ArrayList<Transaction> handledTransactions = new ArrayList<>();
+        HashSet<Transaction> handledTransactions = new HashSet<>();
         //check if every tx is valid and no double spend attempt is detected
         outerLoop:
         for (Transaction tx : possibleTxs) {
@@ -71,8 +72,9 @@ public class TxHandler {
         for (UTXO utxo : utxoPoolIncrement.keySet()) {
             mUtxoPool.addUTXO(utxo, utxoPoolIncrement.get(utxo));
         }
-
-        return (Transaction[]) handledTransactions.toArray();
+        Transaction[] resultArray = new Transaction[handledTransactions.size()];
+        handledTransactions.toArray(resultArray);
+        return resultArray;
     }
 
     private boolean areAllOutputsInPoolNoDoubleSpend(Transaction tx) {
